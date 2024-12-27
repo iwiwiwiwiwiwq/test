@@ -1,0 +1,4034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <title>Test</title>
+    <style>
+		@import url('https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+		body {
+			background-color: rgb(49, 49, 49);
+		}
+
+		#app {
+			width: 100%;
+			height: 100%;
+			position: fixed;
+			top: 0;
+			left: 0;
+			display: flex;
+			align-items: center;
+			align-content: center;
+			justify-content: center;
+			overflow: auto;
+		}
+
+        .correct {
+            background-color: #d4edda;
+            color: green;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+			border: 2px dashed rgba(0, 0, 0, 0.39);
+            color: red;
+        }
+
+		.container {
+			width: 80%;
+		}
+
+		.btn-container {
+			width: 100%;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.result-text {
+			font-family: "Play", serif;
+			font-weight: 400;
+			font-size: 30px;
+			letter-spacing: 2px;
+			font-style: normal;
+			text-align: center;
+			color: white;
+			text-decoration: underline;
+		}
+
+		.question {
+			font-family: "Play", serif;
+			font-weight: 400;
+			font-style: normal;
+			text-align: center;
+			color: white;
+		}
+
+		.answer-btn {
+			height: 50px;
+			margin-bottom: 10px;
+			width: 100%;
+			font-family: "Play", serif;
+			font-weight: 400;
+			font-size: 20px;
+			background-color: white;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			box-shadow: 0 0 5px rgba(255, 255, 255, 0.56);
+		}
+
+		.result-container {
+			height: 500px;
+			overflow-y: auto;
+		}
+
+		.result-counter {
+			font-family: "Play", serif;
+			font-weight: 400;
+			color: white;
+			font-size: 20px;
+			margin-bottom: 20px;
+			border-bottom: 2px solid white;
+		}
+
+		.question-container {
+			display: flex;
+			flex-direction: column;
+			background-color: white;
+			font-family: "Play", serif;
+			font-weight: 400;
+			padding: 10px;
+			margin-bottom: 20px;
+		}
+
+		.question-top {
+			font-size: 25px;
+		}
+
+		.answer-top {
+			padding-left: 20px;
+		}
+
+		@media (max-width: 768px) {
+			.question {
+				font-size: 25px;
+			}
+
+			.container {
+				width: 90%;
+			}
+		}
+
+		@media (max-width: 500px) {
+			.question {
+				font-size: 20px;
+			}
+
+			.answer-btn {
+				height: fit-content;
+				padding: 10px;
+				font-size: 14px;
+			}
+
+			.container {
+				width: 98%;
+			}
+
+			.result-container {
+				height: 700px;
+			}
+		}
+    </style>
+</head>
+<body>
+    <div id="app">
+		<div class="container">
+			<div v-if="currentQuestionIndex < questions.length">
+				<h1 class="question">{{ questions[currentQuestionIndex].question }}</h1>
+				<div class="btn-container">
+					<div v-for="(variant, index) in questions[currentQuestionIndex].variants" :key="index">
+						<button class="answer-btn" @click="checkAnswer(variant, index)">
+							{{ variant.text }}
+						</button>
+					</div>
+				</div>
+			</div>
+			<div v-else>
+				<div class="result-container">
+					<h2 class="result-text">Результаты</h2>
+					<div class="result-counter">
+						<p style="color: lime;">Правильных ответов: {{ correctAnswers }}</p>
+						<p style="color: red;">Неправильных ответов: {{ incorrectAnswers }}</p>
+					</div>
+					
+					<h3 class="result-text">Подробные результаты:</h3>
+					<div class="question-container" v-for="(result, index) in results" :key="index">
+						<div class="question-top">
+							<p><strong>Вопрос №{{index + 1}}:</strong> {{ result.question }}</p>
+						</div>
+						<div class="answer-top" v-for="(variant, idx) in result.variants" :key="idx" 
+							 :class="{'correct': variant.isCorrect && variant.selected, 'incorrect': !variant.isCorrect && variant.selected}">
+							<p>{{ variant.text }}</p>
+						</div>
+						<div class="answer-top correct">
+							<p v-if="!result.isCorrect">Правильный ответ: <b>{{ result.correctAnswer }}</b></p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+
+        createApp({
+          setup() {
+            // Список всех вопросов
+            const allQuestions = ref([
+                {
+                    "question": "Многоплановый  процесс  установления  и  развития  контактов между людьми – это процесс:",
+                    "variants": [
+                    {
+                        "text": "общения",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "понимания",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "восприятия",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "мироощущения",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "мирочувствования",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Прямое деловое общение характеризуется:",
+                    "variants": [
+                    {
+                        "text": "непосредственным речевым контактом",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "ответными реакциями собеседников",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "общением в пределах видимости",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "опосредованным общением",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "общением по телефону",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "В деловой  этике  осознание  невозможности  немедленного преодоления слабости партнера, его недостатков – это проявление принципа:",
+                    "variants": [
+                    {
+                        "text": "терпимости",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "постепенности",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "сознательности",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "нетерпимости",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "сопереживания",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Коммуникативная сторона общения:",
+                    "variants": [
+                    {
+                        "text": "обмен информации между людьми",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "взаимопонимание участников общения",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "организация взаимодействия между людьми",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "опосредованное общение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "игнорирование прямого взаимодействия",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Укажите  правильность  четырех  этапов  коммуникационного процесса :",
+                    "variants": [
+                    {
+                        "text": "инициирование сообщения; передача сообщения; прием сообщения;",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "передача сообщения; инициирование сообщения; прием сообщения;",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "передача сообщения; прием сообщения; инициирование сообщения;",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "обратная  связь;  инициирование  сообщения;  прием  сообщения;",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "прием  сообщения;  инициирование  сообщения;  обратная  связь;",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Кто из следующих авторов ввел впервые термин «коммуникация» в научном контексте? ",
+                    "variants": [
+                    {
+                        "text": "Чарльз Кули",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "Аристотель",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "Роберт Экклз",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "Макс Вебер",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "Огюст Конт",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Какое из следующих понятий в объемном соотношении имеет более широкое значение?",
+                    "variants": [
+                    {
+                        "text": "общение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "социальная коммуникация",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "деловая коммуникация",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "все термины равны по объему",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "коммуникация",
+                        "isCorrect": true
+                    }
+                    ]
+                },
+                {
+                    "question": "Выделите то, что не относится к основным формам проявления деловой коммуникации:",
+                    "variants": [
+                    {
+                        "text": "эмпатия",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "деловая беседа",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "деловое совещание",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "деловое публичное выступление",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "презентация",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Один  из  самых массовых видов общения  людей, рассматривающийся как процесс, направленный на достижение определенных интересов и целей в профессиональной сфере, называется:",
+                    "variants": [
+                    {
+                        "text": "деловые коммуникации",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "повседневное общение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "спор",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "ораторское искусство",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "экзистенция",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Использование приемов (техник) коммуникации, целью которых является прямое вынуждение собеседника принять ошибочное, невыгодное для его позиции решение, называется:",
+                    "variants": [
+                    {
+                        "text": "манипуляцией",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "ораторским мастерством",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "новаторскими способностями",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "профессиональными компетенциями",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "адекватной самооценкой",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Воздействие на адресата с целью добиться желаемого результата или погружения его в определенное состояние, есть:",
+                    "variants": [
+                    {
+                        "text": "манипуляция",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "ораторское мастерство",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "новаторская способность",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "профессионализм",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "рефлексия",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Как называется  тип  манипуляции,  когда  манипулятор наслаждается  вызванной  реакцией  у  адресата,  поскольку  она  является несомненным доказательством его могущества:",
+                    "variants": [
+                    {
+                        "text": "гедонистическая манипуляция",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "прагматическая манипуляция",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "эзотерическая манипуляция",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "рефлексирующая манипуляция",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "агрессивная манипуляция",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Как называется тип манипуляции, который носят стратегический характер, хорошо просчитаны?",
+                    "variants": [
+                    {
+                        "text": "прагматическая манипуляция",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "гедонистическая манипуляция",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "эзотерическая манипуляция",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "рефлексирующая манипуляция",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "агрессивная манипуляция",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Известный  американский  психолог,  психотерапевт,  сторонник гуманистической психологии, который выделяет 8 типов манипуляторов:",
+                    "variants": [
+                    {
+                        "text": "Э. Шостром",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "Э. Фромм",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "З. Фрейд",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "К.Г. Юнг",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "А. Адлер",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Один из известных техник противостояния манипуляциям, когда используется против партнера идентичная технология общения:",
+                    "variants": [
+                    {
+                        "text": "встречное манипулирование",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "жесткое противодействие",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "«мягкий», но обоснованный отказ",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "«психологическое самбо»",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "цивилизованная конфронтация",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Теория речи, искусство речи и ораторское мастерство – области знаний, которые охватывает понятие:",
+                    "variants": [
+                    {
+                        "text": "риторика",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "эристика",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "майевтика",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "агонистика",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "калокагатия",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Вербальным средством коммуникации является ",
+                    "variants": [
+                    {
+                        "text": "речь",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "почерк",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "интонация речи",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "дистанция общения",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "молчание",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Стратегия мягкого подхода к переговорам состоит в том, чтобы:",
+                    "variants": [
+                    {
+                        "text": "избегать конфронтации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "избегать личных оскорблений",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "мягко, но неуклонно отстаивать свою позицию",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "демонстрирование безразличия",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "агрессивное поведение",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Термин «коммуникация» прежде всего употребляется в смысле:",
+                    "variants": [
+                    {
+                        "text": "специфической формы взаимодействия людей в трудовой",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "хозяйственных сооружений",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "транспортной инфраструктуры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "архитектурных сооружений",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "дизайнерских разработок",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Процесс взаимодействия деловых партнеров, направленный на организацию и оптимизацию того или иного вида предметной деятельности, называется",
+                    "variants": [
+                    {
+                        "text": "деловые коммуникации",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "общение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "механизация",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "коллективизация",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "дестабилизация",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "По способу обмена информацией различают:",
+                    "variants": [
+                    {
+                        "text": "устные и письменные коммуникации",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "односторонние, двусторонние",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "монологические, диалогические",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутренние, внешние",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "прямые, косвенные",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "На  непосредственные,  опосредованные,  прямые,  косвенные коммуникации выделяют по:",
+                    "variants": [
+                    {
+                        "text": "средствам общения",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "по месту осуществления",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "по способу обмена информацией",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "в зависимости от сторон, участвующих в коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "в соответствии с типом речи",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Коммуникации, осуществляющиеся  с  помощью  естественных органов, данных человеку: руки, голова, туловище, голосовые связки и т.д., называются:",
+                    "variants": [
+                    {
+                        "text": "непосредственными",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "опосредованными",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "прямыми",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "косвенными",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутренними",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Коммуникации, связанные с использованием специальных средств и орудий, называются:",
+                    "variants": [
+                    {
+                        "text": "опосредованными",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "непосредственными",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "прямыми",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутренними",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "монологическими",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Коммуникации,  предполагающие  личные  контакты  и непосредственное восприятие друг другом общающихся людей в самом акте общения:",
+                    "variants": [
+                    {
+                        "text": "прямые",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "косвенные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "монологические",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "диалогические",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "опосредованные",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Коммуникации, осуществляющиеся через посредников, которыми могут выступать другие люди:",
+                    "variants": [
+                    {
+                        "text": "косвенные",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "прямые",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "монологические",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутренние",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "письменные",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "По месту осуществления коммуникации разделяются на:",
+                    "variants": [
+                    {
+                        "text": "внутренние и внешние",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "монологические и диалогические",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "устные и письменные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "прямые и косвенные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "двухсторонние и многосторонние",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Коммуникации, при которых стороны коммуникации находятся в рамках организации:",
+                    "variants": [
+                    {
+                        "text": "внутренние",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "внешние",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "монологические",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "косвенные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "устные",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Одна из сторон коммуникации относится к субъектам внешней среды организации, это коммуникации:",
+                    "variants": [
+                    {
+                        "text": "внешние",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "внутренние",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "монологические",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "косвенные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "письменные",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "В  зависимости  от  количества  сторон,  участвующих  в коммуникации, выделяют:",
+                    "variants": [
+                    {
+                        "text": "односторонние, двухсторонние, многосторонние",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "внутренние, внешние",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "прямые, косвенные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "монологические, диалогические",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "устные, письменные",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "В соответствии с типом речи, используемым в коммуникации, существуют:",
+                    "variants": [
+                    {
+                        "text": "монологические, диалогические",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "формальные, неформальные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутренние, внешние",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "прямые, косвенные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "опосредованные, непосредственные",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Приветственная речь, торговая речь (реклама), информационная речь, доклад относятся к следующему виду коммуникации:",
+                    "variants": [
+                    {
+                        "text": "монологической",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "диалогической",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутренней",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внешней",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "косвенной",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Дискуссия; совещание (собрание); пресс-конференция относятся к следующему виду коммуникации:",
+                    "variants": [
+                    {
+                        "text": "диалогической",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "монологической",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутренней",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "косвенной",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "формальной",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Если  в  качестве  критерия  классификации  рассматривать источники регулирования коммуникации, то выделяются:",
+                    "variants": [
+                    {
+                        "text": "формальные и неформальные",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "монологические и диалогические",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "письменные и устные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "прямые и косвенные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутренние и внешние",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Коммуникации,  осуществляющиеся  на  основе  хорошо проработанных и легитимных, как правило, выраженных в письменной форме инструкций, руководств, методик и т.п., называются:",
+                    "variants": [
+                    {
+                        "text": "формальными",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "неформальными",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутренними",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "диалогическими",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "монологическими",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Коммуникации, которые осуществляются на основе устных норм и правил:",
+                    "variants": [
+                    {
+                        "text": "неформальные",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "формальные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутренними",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "диалогическими",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "монологическими",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "В зависимости от средств коммуникации выделяют:",
+                    "variants": [
+                    {
+                        "text": "вербальные и невербальные",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "внутренние и внешние",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "монологические и диалогические",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "опосредованные и непосредственные",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "длительные и кратковременные",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Общение  с  использованием  письменных  или  устных  средств, называется:",
+                    "variants": [
+                    {
+                        "text": "вербальные коммуникации",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "невербальные коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "кратковременные коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "длительные коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "эпизодические коммуникации",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Коммуникации с помощью мимики, пантомимики, проксемики, тактильных средств, облика, изображения и т.п., называются:",
+                    "variants": [
+                    {
+                        "text": "невербальные коммуникации",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "вербальные коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "кратковременные коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "длительные коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "эпизодические коммуникации",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "На  длительные,  кратковременные,  эпизодические,  в  реальном времени,  с  разделением  времени  делят  коммуникации  по  следующему критерию:",
+                    "variants": [
+                    {
+                        "text": "по времени",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "по степени завершенности",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "в зависимости от средств коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "на основе источников регулирования коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "в соответствии с типом речи",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Препятствия  и  помехи,  нарушающие  процесс  передачи информации и снижающие его эффективность, называются:",
+                    "variants": [
+                    {
+                        "text": "коммуникативными барьерами",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "головоломками",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "антонимами",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "антогонизмами",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "апориями",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Процессы  и  явления,  обусловленные  индивидуальными характеристиками отправителя и получателя информации, относятся к какому типу коммуникативных барьеров:",
+                    "variants": [
+                    {
+                        "text": "личностные барьеры",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "культурные барьеры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "физические барьеры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "языковые барьеры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "семантические барьеры",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Факторы, формирующиеся  исторически  и  связанные  с национальной самобытностью, традициями и нормами поведения в отдельных странах  и  регионах;  их  незнание  или  игнорирование  может  осложнить коммуникацию,  а  в  некоторых  случаях  и  привести  к  разрыву  деловых отношений, называются:",
+                    "variants": [
+                    {
+                        "text": "культурными барьерами",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "физическими барьерами",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "личностными барьерами",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "языковыми барьерами",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "организационными барьерами",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Помехи  лексико-грамматического  характера  (недостаточный словарный запас, неадекватность стиля речи, сокращения и аббревиатуры, речевые ошибки), это:",
+                    "variants": [
+                    {
+                        "text": "языковые барьеры",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "культурные барьеры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "личностными барьеры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "физические барьеры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "организационными барьеры",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Нарушения  коммуникаций,  вызванные  непониманием  или недопониманием  смысла  информации  вследствие  использования профессиональных  терминов,  фразеологизмов,  жаргонизмов,  крылатых выражений, пословиц и поговорок, это:",
+                    "variants": [
+                    {
+                        "text": "семантические барьеры",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "языковые барьеры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "культурные барьеры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "личностными барьеры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "физические барьеры",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Человека, передающего информацию, называют коммуникатором, а того, кто информацию принимает:",
+                    "variants": [
+                    {
+                        "text": "реципиентом",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "конкурентом",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "оппонентом",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "другом",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "коллегой",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Сообщение, отправитель, адресат (получатель), канал – это четыре базовых элемента:",
+                    "variants": [
+                    {
+                        "text": "коммуникационного процесса",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "межкультурных различий в коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "корпоративной культуры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "самопрезентации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "успешной коммуникации",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Прояснение  задач,  приоритетов,  ожидаемых  результатов; обеспечение  вовлеченности  подчиненных  в  решение  задач;  обсуждение проблем эффективности работы; совершенствование и развитие способностей у  подчиненных  и  т.п. – это  вид  коммуникации  в  организации,  который называется:",
+                    "variants": [
+                    {
+                        "text": "вертикальный",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "интерактивный",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "горизонтальный",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "международный",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внутриличностный",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Коммуникации  в  организациях,  возникающие в  процессе взаимодействия с лицами, равными по положению и обеспечивают человеку необходимую социальную поддержку:",
+                    "variants": [
+                    {
+                        "text": "горизонтальные (интерактивные) коммуникации",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "вертикальные коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "внешние коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "письменные коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "устные коммуникации",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Скрытое управление поведением партнера:",
+                    "variants": [
+                    {
+                        "text": "манипулирование",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "просьба",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "принуждение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "заражение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "приказ",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Организация совместной деятельности, поиск средств повышения эффективности сотрудничества – это ... уровень общения:",
+                    "variants": [
+                    {
+                        "text": "деловой",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "интимно-личностный",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "ритуальный",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "социально-ролевой",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "прагматический",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Во многих случаях, имидж – это результат умелой ориентации в конкретной ситуации, а именно правильного выбора своей:",
+                    "variants": [
+                    {
+                        "text": "модели поведения",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "заинтересованности в отношении с другими",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "способности к общению",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "способности к манипулированию",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "способности к отстраненности",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "При авторитарном стиле ведения совещания руководитель:",
+                    "variants": [
+                    {
+                        "text": "уверенно держит бразды правления",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "допускает возражения",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "ищет поддержку среди коллег",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "заискивает перед коллегами",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "ссылается на авторитеты",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Хорошая репутация бизнесмена базируется, в первую очередь, на профессионализме и:",
+                    "variants": [
+                    {
+                        "text": "деловой обязательности",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "привлекательном имидже",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "вежливости",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "знании нескольких иностранных языков",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "при авторитарном стиле работы",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "В деловом общении обращение к собеседнику происходит на ...",
+                    "variants": [
+                    {
+                        "text": "«Вы» независимо от должности и соподчинения",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "«Вы» только с руководителем и сторонними людьми",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "«Ты» независимо от должности и соподчинения",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "на личное усмотрение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "по настроению",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Вы ведете переговоры. Партнер опоздал на встречу на 8 минут. Ваша реакция ...",
+                    "variants": [
+                    {
+                        "text": "сделаю вид, что ничего не произошло, сразу перейду к делу",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "выражу опоздавшему свое недовольство",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "выразительно посмотрю в момент его появления на часы",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "через шутку выражу свое недоумение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "объявлю о прекращении переговоров",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "За  счет  невербальных  средств  общения  осуществляется коммуникаций:",
+                    "variants": [
+                    {
+                        "text": "от 60% до 80%",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "от 10% до 20%",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "от 15% до 20%",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "от 5% до 20%",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "все 100%",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Цель формального приема в начале переговоров:",
+                    "variants": [
+                    {
+                        "text": "создать атмосферу взаимопонимания",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "высказать точку зрения своей стороны",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "выслушать точку зрения партнеров",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "напугать партнеров",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "применение агрессивной тактики",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Слово «коммуникация» произошло от латинского «communicatio», что означает:",
+                    "variants": [
+                    {
+                        "text": "сообщение",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "вызов",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "контраргумент",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "согласие",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "телефонный звонок",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Заимствование  образцов  поведения,  стилей  общения,  образа жизни одних членов общества другими, есть:",
+                    "variants": [
+                    {
+                        "text": "подражание",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "общение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "эмпатия",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "рефлексия",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "экзистенция",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Отметьте,  то,  что  не  относится  к  структурным  компонентам общения – это:",
+                    "variants": [
+                    {
+                        "text": "материальное производство",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "предмет общения",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "коммуникативные мотивы общения",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "средства общения",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "продукт общения",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Связующая,  формирующая,  подтверждающая,  межличностная, внутриличностная есть:",
+                    "variants": [
+                    {
+                        "text": "функции коммуникации",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "эмпатия",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "коммуникативные барьеры",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "конфликты",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "манипуляции в деловой коммуникации",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Мимика, жесты, позы, реакции кожи, контакт глаз и т.п. – это:",
+                    "variants": [
+                    {
+                        "text": "визуальная система невербальной коммуникации",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "ольфакторная система невербальной коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "акустическая система невербальной коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "тактильная система невербальной коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "система вербальной коммуникации",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Паралингвистическая  (громкость,  темп,  тембр,  высота)  и экстралингвистическая (паузы, смех, кашель, плач) – это:",
+                    "variants": [
+                    {
+                        "text": "акустическая система невербальной коммуникации",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "ольфакторная система невербальной коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "тактильная система невербальной коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "визуальная система невербальной коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "система вербальной коммуникации",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Прикосновения,  рукопожатия,  поглаживания,  похлопывания, объятия и поцелуи – это:",
+                    "variants": [
+                    {
+                        "text": "тактильная система невербальной коммуникации",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "визуальная система невербальной коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "система вербальной коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "ольфакторная система невербальной коммуникации",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "акустическая система невербальной коммуникации",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Отметьте то, что не относится к общепринятым формам деловой коммуникации:",
+                    "variants": [
+                    {
+                        "text": "задушевные беседы о личном",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "деловые беседы",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "совещания",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "публичные выступления",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "конференции",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Разновидностями расширенного совещания являются:",
+                    "variants": [
+                    {
+                        "text": "все перечисленные",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "съезд",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "конгресс",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "конференция",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "симпозиум",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Форма деловой коммуникации, целью которой является поиск решения (выработка решения) проблем, приемлемого для всех сторон:",
+                    "variants": [
+                    {
+                        "text": "деловые переговоры",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "деловая беседа",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "манипуляции",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "коммуникативные проблемы",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "совещание",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Монологическая  ораторская  речь,  адресованная  определенной аудитории, которая произносится с целью информирования слушателей и оказания  на  них желаемого  воздействия  (убеждение,  внушение, воодушевление, призыв к действию и т.д., называется:",
+                    "variants": [
+                    {
+                        "text": "публичная речь",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "сократовская ирония",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "речь софиста",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "речь оракула",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "нет правильного ответа",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Основные техники противостояния манипуляциям:",
+                    "variants": [
+                    {
+                        "text": "все перечисленное",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "информационный диалог",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "«психологическое самбо»",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "цивилизованная конфронтация",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "встречное манипулирование",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Один из основных техник противостояния манипуляциям, когда проясняется своя  собственная  позиция  и  позиция  партнера  с  помощью технологии «вопрос – ответ»: вопросы о сути дела, о целях, отказ или отсрочка ответа, видимое отсутствие реакции:",
+                    "variants": [
+                    {
+                        "text": "информационный диалог",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "«психологическое самбо»",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "цивилизованная конфронтация",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "встречное манипулирование",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "отчуждение",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Один из основных техник противостояния манипуляциям, когда наблюдаем  открытое  противопоставление  и  противостояние  партнеру, выдержанное в рамках вежливости и делового этикета. Это может быть логическое противостояние, полемика, жесткое противодействие, «мягкий», но обоснованный отказ и т.п.:",
+                    "variants": [
+                    {
+                        "text": "цивилизованная конфронтация",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "информационный диалог",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "встречное манипулирование",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "отчуждение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "нейтралитет",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+                    "question": "Использование против партнера идентичной технологии общения:",
+                    "variants": [
+                    {
+                        "text": "встречное манипулирование",
+                        "isCorrect": true
+                    },
+                    {
+                        "text": "отчуждение",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "цивилизованная конфронтация",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "информационный диалог",
+                        "isCorrect": false
+                    },
+                    {
+                        "text": "«психологическое самбо»",
+                        "isCorrect": false
+                    }
+                    ]
+                },
+                {
+					"question": "«Психологическое  самбо»,  как  один  из  основных  техник противостояния манипуляциям означает:",
+					"variants": [
+					  {
+						"text": "ответ  вопросом  на  вопрос;  невнятный  запутывающий  ответ, холодная вежливость, бесконечное уточнение «что Вы имеете в виду»",
+						"isCorrect": true
+					  },
+					  {
+						"text": "использование против партнера идентичной технологии общения",
+						"isCorrect": false
+					  },
+					  {
+						"text": "открытое  противостояние,  полемика,  жесткое  противодействие, «мягкий», но обоснованный отказ и т.п.:",
+						"isCorrect": false
+					  },
+					  {
+						"text": "когда проясняется своя собственная позиция и позиция партнера с помощью технологии «вопрос – ответ»: вопросы о сути дела, о целях, отказ или отсрочка ответа, видимое отсутствие реакции",
+						"isCorrect": false
+					  },
+					  {
+						"text": "абсолютное бездействие и игнорирование",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Барьер защиты в коммуникациях:",
+					"variants": [
+					  {
+						"text": "вызван желанием собеседника «защититься» от общения в силу навязчивого внимания к нему",
+						"isCorrect": true
+					  },
+					  {
+						"text": "возникает в общении с расстроенным или обиженным человеком",
+						"isCorrect": false
+					  },
+					  {
+						"text": "возникает тогда, когда взаимодействию мешает его нравственная позиция",
+						"isCorrect": false
+					  },
+					  {
+						"text": "зависит изначально от манеры поведения партнера, его темперамента, характера",
+						"isCorrect": false
+					  },
+					  {
+						"text": "осознание того, что надо полагаться на самого себя, некомпетентность партнера",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Эстетический барьер в коммуникациях возникает:",
+					"variants": [
+					  {
+						"text": "в том случае, когда партнер неряшливо одет или обстановка в его кабинете, вид рабочего стола не располагают к беседе ",
+						"isCorrect": true
+					  },
+					  {
+						"text": "возникает, в частности тогда, когда у партнеров разные мотивы вступления в контакт",
+						"isCorrect": false
+					  },
+					  {
+						"text": "возникает тогда, когда взаимодействию мешает его нравственная позиция",
+						"isCorrect": false
+					  },
+					  {
+						"text": "зависит изначально от манеры поведения партнера, его темперамента, характера",
+						"isCorrect": false
+					  },
+					  {
+						"text": "осознание того, что надо полагаться на самого себя, некомпетентность партнера",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Этический барьер в коммуникациях возникает:",
+					"variants": [
+					  {
+						"text": "тогда, когда взаимодействию мешает его нравственная позиция",
+						"isCorrect": true
+					  },
+					  {
+						"text": "возникает, в частности тогда, когда у партнеров разные мотивы вступления в контакт",
+						"isCorrect": false
+					  },
+					  {
+						"text": "в том случае, когда партнер неряшливо одет или обстановка в его кабинете, вид рабочего стола не располагают к беседе",
+						"isCorrect": false
+					  },
+					  {
+						"text": "осознание того, что надо полагаться на самого себя, некомпетентность партнера",
+						"isCorrect": false
+					  },
+					  {
+						"text": "разное социальное положение партнеров",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Барьер отрицательных эмоций в коммуникациях возникает:",
+					"variants": [
+					  {
+						"text": "в общении с расстроенным или обиженным человеком",
+						"isCorrect": true
+					  },
+					  {
+						"text": "тогда, когда взаимодействию мешает его нравственная позиция",
+						"isCorrect": false
+					  },
+					  {
+						"text": "в том случае, когда партнер неряшливо одет или обстановка в его кабинете, вид рабочего стола не располагают к беседе",
+						"isCorrect": false
+					  },
+					  {
+						"text": "разное социальное положение партнеров",
+						"isCorrect": false
+					  },
+					  {
+						"text": "осознание того, что надо полагаться на самого себя, некомпетентность партнера",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Что может стать барьером в общении?",
+					"variants": [
+					  {
+						"text": "все ответы верны",
+						"isCorrect": true
+					  },
+					  {
+						"text": "психофизиологические барьеры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "ошибки, обусловленные особенностями восприятия",
+						"isCorrect": false
+					  },
+					  {
+						"text": "преждевременные оценки",
+						"isCorrect": false
+					  },
+					  {
+						"text": "неумение слушать, неэффективная обратная связь",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Доступность, ассоциативность, экспрессивность, интенсивность, сенсорность – это:",
+					"variants": [
+					  {
+						"text": "принципы речевого воздействия",
+						"isCorrect": true
+					  },
+					  {
+						"text": "коммуникационные эффекты",
+						"isCorrect": false
+					  },
+					  {
+						"text": "принципы коммуникационного конфликта",
+						"isCorrect": false
+					  },
+					  {
+						"text": "комплименты",
+						"isCorrect": false
+					  },
+					  {
+						"text": "дипломатический этикет",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Отметьте то, что не относится к невербальным средствам передачи информации: ",
+					"variants": [
+					  {
+						"text": "устная речь",
+						"isCorrect": true
+					  },
+					  {
+						"text": "мимика",
+						"isCorrect": false
+					  },
+					  {
+						"text": "жесты",
+						"isCorrect": false
+					  },
+					  {
+						"text": "тон речи",
+						"isCorrect": false
+					  },
+					  {
+						"text": "интонация речи",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Укажите то, что не относится к нелитературным формам языка:",
+					"variants": [
+					  {
+						"text": "книжная речь",
+						"isCorrect": true
+					  },
+					  {
+						"text": "диалект",
+						"isCorrect": false
+					  },
+					  {
+						"text": "просторечие",
+						"isCorrect": false
+					  },
+					  {
+						"text": "жаргон",
+						"isCorrect": false
+					  },
+					  {
+						"text": "сленг",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Укажите из перечисленного то, что не относится к видам деловой беседы:",
+					"variants": [
+					  {
+						"text": "монолог",
+						"isCorrect": true
+					  },
+					  {
+						"text": "собеседование при приеме на работу",
+						"isCorrect": false
+					  },
+					  {
+						"text": "проблемная беседа",
+						"isCorrect": false
+					  },
+					  {
+						"text": "собеседование при увольнении",
+						"isCorrect": false
+					  },
+					  {
+						"text": "дисциплинарная беседа",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Обмен  информацией,  осуществляемый  носителями  разных культур, это:",
+					"variants": [
+					  {
+						"text": "межкультурная коммуникация",
+						"isCorrect": true
+					  },
+					  {
+						"text": "географический детерминизм",
+						"isCorrect": false
+					  },
+					  {
+						"text": "этический рационализм",
+						"isCorrect": false
+					  },
+					  {
+						"text": "субкультурный обмен",
+						"isCorrect": false
+					  },
+					  {
+						"text": "этический релятивизм",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Что такое проксемика?",
+					"variants": [
+					  {
+						"text": "это  использование  пространственных  отношений  при коммуникации,  выражающееся  в  отделении  личной  территории, персонализации  места  и  объекта  общения,  которые  становятся собственностью человека или группы индивидов",
+						"isCorrect": true
+					  },
+					  {
+						"text": "направление, занимающееся изучением того, как влияют на конечный смысл высказывания просодические компоненты: тембр, высота и сила голоса, дикция и т.п.",
+						"isCorrect": false
+					  },
+					  {
+						"text": "любые коммерческие сделки, совершаемые с помощью электронных средств связи",
+						"isCorrect": false
+					  },
+					  {
+						"text": "особая форма словесности, воплощаяющаяся в текстах, имеющих форму письма, телеграммы, посылаемые адресату для сообщения определенных сведений",
+						"isCorrect": false
+					  },
+					  {
+						"text": "банальное неумение работать в сети",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Двусторонний  процесс  постоянной  передачи  обществом  и освоения индивидом в течение всей его жизни социальных норм, культурных ценностей и образцов поведения, позволяющий индивиду функционировать в данном обществе, это:",
+					"variants": [
+					  {
+						"text": "социализация",
+						"isCorrect": true
+					  },
+					  {
+						"text": "аккультурация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "энкультурация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "монохронная культура",
+						"isCorrect": false
+					  },
+					  {
+						"text": "полихронная культура",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Теория    межкультурной    коммуникации    является междисциплинарной областью каких наук?",
+					"variants": [
+					  {
+						"text": "всех перечисленных",
+						"isCorrect": true
+					  },
+					  {
+						"text": "психологии",
+						"isCorrect": false
+					  },
+					  {
+						"text": "теории коммуникаций",
+						"isCorrect": false
+					  },
+					  {
+						"text": "социологии",
+						"isCorrect": false
+					  },
+					  {
+						"text": "лингвистики",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Как  называется процесс  приобщения  индивида  к  культуре, усвоения  им  существующих  привычек,  норм  и  паттернов  поведения, свойственных данной культуре?",
+					"variants": [
+					  {
+						"text": "энкультурация",
+						"isCorrect": true
+					  },
+					  {
+						"text": "социализация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "аккультурация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "политизация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "морализация",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Результат приспособления индивида или относительно небольшой группы людей к жизни в инокультурной среде, который выражается в смене ценностных  установок,  трансформации  набора  социальных  ролей  (и, следовательно, социального ролевого поведения), изменении идентичности личности:",
+					"variants": [
+					  {
+						"text": "аккультурация",
+						"isCorrect": true
+					  },
+					  {
+						"text": "социализация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "энкультурация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "мобилизация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "политизация",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Как называется регламентированный процесс записи информации на различных носителях, обеспечивающих ее юридическую силу?",
+					"variants": [
+					  {
+						"text": "документирование",
+						"isCorrect": true
+					  },
+					  {
+						"text": "конспектирование",
+						"isCorrect": false
+					  },
+					  {
+						"text": "стенограмма",
+						"isCorrect": false
+					  },
+					  {
+						"text": "копирование",
+						"isCorrect": false
+					  },
+					  {
+						"text": "реферирование",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "К общим функциям документов относятся:",
+					"variants": [
+					  {
+						"text": "информационная, социальная, культурная",
+						"isCorrect": true
+					  },
+					  {
+						"text": "управленческая, правовая, функция исторического источника",
+						"isCorrect": false
+					  },
+					  {
+						"text": "управленческая, правовая",
+						"isCorrect": false
+					  },
+					  {
+						"text": "функция исторического источника, культурная",
+						"isCorrect": false
+					  },
+					  {
+						"text": "социальная, правовая",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Правовой  акт,  издаваемый  руководителем  организации, действующим на основе единичного принятия решений, в целях разрешения основных и оперативных задач, стоящих перед организацией?",
+					"variants": [
+					  {
+						"text": "приказ",
+						"isCorrect": true
+					  },
+					  {
+						"text": "протокол",
+						"isCorrect": false
+					  },
+					  {
+						"text": "докладная записка",
+						"isCorrect": false
+					  },
+					  {
+						"text": "представление",
+						"isCorrect": false
+					  },
+					  {
+						"text": "объяснительная записка",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Как называется документ, содержащий запись хода обсуждения вопросов и принятия решений на собраниях, совещаниях, заседаниях и т.п.?",
+					"variants": [
+					  {
+						"text": "протокол",
+						"isCorrect": true
+					  },
+					  {
+						"text": "приказ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "представление",
+						"isCorrect": false
+					  },
+					  {
+						"text": "докладная записка",
+						"isCorrect": false
+					  },
+					  {
+						"text": "объяснительная записка",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Документ, адресованный руководителю организации, содержащий обстоятельное изложение какого-либо вопроса с выводами и предложениями составителя:",
+					"variants": [
+					  {
+						"text": "докладная записка",
+						"isCorrect": true
+					  },
+					  {
+						"text": "протокол",
+						"isCorrect": false
+					  },
+					  {
+						"text": "объяснительная записка",
+						"isCorrect": false
+					  },
+					  {
+						"text": "приказ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "переписка",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Документ,  адресованный  должностному  лицу  и  содержащий просьбу работника?",
+					"variants": [
+					  {
+						"text": "заявление",
+						"isCorrect": true
+					  },
+					  {
+						"text": "объяснительная записка",
+						"isCorrect": false
+					  },
+					  {
+						"text": "переписка",
+						"isCorrect": false
+					  },
+					  {
+						"text": "приказ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "протокол",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "В деловой переписке какие виды писем относятся к официальным?",
+					"variants": [
+					  {
+						"text": "письма-заявления, информационные письма, гарантийные письма",
+						"isCorrect": true
+					  },
+					  {
+						"text": "письма-поздравления, письма-приглашения ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "письма для выражения соболезнования, письма по случаю отъезда, благодарственные письма",
+						"isCorrect": false
+					  },
+					  {
+						"text": "письма-извинения, письма-отказы",
+						"isCorrect": false
+					  },
+					  {
+						"text": "письма для обращения в частном порядке, письма негативного содержания, письма-извинения",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "К распорядительной документации относятся:",
+					"variants": [
+					  {
+						"text": "все перечисленное",
+						"isCorrect": true
+					  },
+					  {
+						"text": "приказы",
+						"isCorrect": false
+					  },
+					  {
+						"text": "распоряжения",
+						"isCorrect": false
+					  },
+					  {
+						"text": "указания",
+						"isCorrect": false
+					  },
+					  {
+						"text": "постановления",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Любой  вид  сделок,  при  которых  взаимодействие  сторон осуществляется  электронным  способом  вместо  физического  обмена  или непосредственного физического контакта:",
+					"variants": [
+					  {
+						"text": "электронная коммерция",
+						"isCorrect": true
+					  },
+					  {
+						"text": "электронный дискурс",
+						"isCorrect": false
+					  },
+					  {
+						"text": "транзакционная издержка",
+						"isCorrect": false
+					  },
+					  {
+						"text": "сетевая безопасность",
+						"isCorrect": false
+					  },
+					  {
+						"text": "электронная социализация",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Комплекс  устоявшихся  норм  или  правил,  применимых  как  в каком-то определенном интернет-сообществе, так и в рамках всего ведения коммуникации в интернете:",
+					"variants": [
+					  {
+						"text": "нетикет",
+						"isCorrect": true
+					  },
+					  {
+						"text": "этика",
+						"isCorrect": false
+					  },
+					  {
+						"text": "мораль",
+						"isCorrect": false
+					  },
+					  {
+						"text": "нравственность",
+						"isCorrect": false
+					  },
+					  {
+						"text": "деловое общение",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Установленный порядок поведения партнеров в сфере деловых контактов – это:",
+					"variants": [
+					  {
+						"text": "культура делового общения",
+						"isCorrect": true
+					  },
+					  {
+						"text": "социализация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "аккультурация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "девиантное поведение",
+						"isCorrect": false
+					  },
+					  {
+						"text": "электронная коммерция",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Укажите  универсальные  этические  принципы  деловых коммуникаций:",
+					"variants": [
+					  {
+						"text": "все перечисленные",
+						"isCorrect": true
+					  },
+					  {
+						"text": "принцип гуманизма",
+						"isCorrect": false
+					  },
+					  {
+						"text": "принцип коллективизма",
+						"isCorrect": false
+					  },
+					  {
+						"text": "принцип патриотизма ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "принцип ответственности",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Основные этические категории как основа деловых коммуникаций в цивилизованном обществе:",
+					"variants": [
+					  {
+						"text": "все перечисленное",
+						"isCorrect": true
+					  },
+					  {
+						"text": "справедливость",
+						"isCorrect": false
+					  },
+					  {
+						"text": "совесть",
+						"isCorrect": false
+					  },
+					  {
+						"text": "долг",
+						"isCorrect": false
+					  },
+					  {
+						"text": "достоинство",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Способ держать себя, внешняя форма поведения, обращение с другими людьми, а также тон, интонации и выражения, употребляемые в речи. Кроме того, это жесты, походка, мимика, характерные для человека:",
+					"variants": [
+					  {
+						"text": "манера",
+						"isCorrect": true
+					  },
+					  {
+						"text": "этичность",
+						"isCorrect": false
+					  },
+					  {
+						"text": "культурность",
+						"isCorrect": false
+					  },
+					  {
+						"text": "здравый смысл",
+						"isCorrect": false
+					  },
+					  {
+						"text": "целесообразность",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Наука о закономерностях зарождения, возникновения, развития, разрешения и завершения конфликтов:",
+					"variants": [
+					  {
+						"text": "конфликтология",
+						"isCorrect": true
+					  },
+					  {
+						"text": "политология",
+						"isCorrect": false
+					  },
+					  {
+						"text": "гносеология",
+						"isCorrect": false
+					  },
+					  {
+						"text": "антропология",
+						"isCorrect": false
+					  },
+					  {
+						"text": "социология",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Соперничество как стратегия поведения в конфликтной ситуации:",
+					"variants": [
+					  {
+						"text": "заключается в навязывании другой стороне предпочтительного для себя решения",
+						"isCorrect": true
+					  },
+					  {
+						"text": "предполагает взаимные уступки в чем-то важном и принципиальном для каждой из сторон",
+						"isCorrect": false
+					  },
+					  {
+						"text": "означает нахождение в ситуации конфликта, но без всяких активных действий по его разрешению",
+						"isCorrect": false
+					  },
+					  {
+						"text": "позволяет осуществить поиск такого решения, которое бы удовлетворило обе стороны",
+						"isCorrect": false
+					  },
+					  {
+						"text": "основывается на игнорировании своих интересов и принятии позиции оппонента",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Компромисс как стратегия поведения в конфликтной ситуации:",
+					"variants": [
+					  {
+						"text": "предполагает взаимные уступки в чем-то важном и принципиальном для каждой из сторон",
+						"isCorrect": true
+					  },
+					  {
+						"text": "заключается в навязывании другой стороне предпочтительного для себя решения ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "означает нахождение в ситуации конфликта, но без всяких активных действий по его разрешению",
+						"isCorrect": false
+					  },
+					  {
+						"text": "позволяет осуществить поиск такого решения, которое бы удовлетворило обе стороны",
+						"isCorrect": false
+					  },
+					  {
+						"text": "основывается на игнорировании своих интересов и принятии позиции оппонента",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Уклонение как стратегия поведения в конфликтной ситуации:",
+					"variants": [
+					  {
+						"text": "означает нахождение в ситуации конфликта, но без всяких активных действий по его разрешению",
+						"isCorrect": true
+					  },
+					  {
+						"text": "предполагает взаимные уступки в чем-то важном и принципиальном для каждой из сторон",
+						"isCorrect": false
+					  },
+					  {
+						"text": "заключается в навязывании другой стороне предпочтительного для себя решения",
+						"isCorrect": false
+					  },
+					  {
+						"text": "основывается на игнорировании своих интересов и принятии позиции оппонента",
+						"isCorrect": false
+					  },
+					  {
+						"text": "позволяет осуществить поиск такого решения, которое бы удовлетворило обе стороны",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Приспособление  (уступка)  как  стратегия  поведения  в конфликтной ситуации:",
+					"variants": [
+					  {
+						"text": "основывается на игнорировании своих интересов и принятии позиции оппонента",
+						"isCorrect": true
+					  },
+					  {
+						"text": "позволяет осуществить поиск такого решения, которое бы удовлетворило обе стороны",
+						"isCorrect": false
+					  },
+					  {
+						"text": "заключается в навязывании другой стороне предпочтительного для себя решения",
+						"isCorrect": false
+					  },
+					  {
+						"text": "означает нахождение в ситуации конфликта, но без всяких активных действий по его разрешению",
+						"isCorrect": false
+					  },
+					  {
+						"text": "предполагает взаимные уступки в чем-то важном и принципиальном для каждой из сторон",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Сотрудничество  как  стратегия  поведения  в  конфликтной ситуации:",
+					"variants": [
+					  {
+						"text": "позволяет осуществить поиск такого решения, которое бы удовлетворило обе стороны",
+						"isCorrect": true
+					  },
+					  {
+						"text": "предполагает взаимные уступки в чем-то важном и принципиальном для каждой из сторон",
+						"isCorrect": false
+					  },
+					  {
+						"text": "означает нахождение в ситуации конфликта, но без всяких активных действий по его разрешению",
+						"isCorrect": false
+					  },
+					  {
+						"text": "заключается в навязывании другой стороне предпочтительного для себя решения",
+						"isCorrect": false
+					  },
+					  {
+						"text": "основывается на игнорировании своих интересов и принятии позиции оппонента",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Первое официальное представление заинтересованной аудитории некоторой  еще  неизвестной  или  малоизвестной  продукции,  фирмы  и  ее создателей:",
+					"variants": [
+					  {
+						"text": "презентация",
+						"isCorrect": true
+					  },
+					  {
+						"text": "премьера",
+						"isCorrect": false
+					  },
+					  {
+						"text": "анонсирование",
+						"isCorrect": false
+					  },
+					  {
+						"text": "афиширование",
+						"isCorrect": false
+					  },
+					  {
+						"text": "манипуляция",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Презентации в деловой коммуникации бывают:",
+					"variants": [
+					  {
+						"text": "все перечисленное",
+						"isCorrect": true
+					  },
+					  {
+						"text": "презентация товара",
+						"isCorrect": false
+					  },
+					  {
+						"text": "презентация проекта",
+						"isCorrect": false
+					  },
+					  {
+						"text": "презентация объема и содержания выполненных работ (отчет)",
+						"isCorrect": false
+					  },
+					  {
+						"text": "презентация плана будущих работ",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Структура общения представлена тремя ее сторонами:",
+					"variants": [
+					  {
+						"text": "коммуникация, интеракция, перцепция",
+						"isCorrect": true
+					  },
+					  {
+						"text": "деловая беседа, деловая переписка, телефонный разговор",
+						"isCorrect": false
+					  },
+					  {
+						"text": "переговорный процесс, презентация, манипуляция",
+						"isCorrect": false
+					  },
+					  {
+						"text": "манипуляция, дипломатический этикет, деловой этикет",
+						"isCorrect": false
+					  },
+					  {
+						"text": "речевое воздействие, слушание, манипуляция",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Коммуникативная сторона общения:",
+					"variants": [
+					  {
+						"text": "позволяет представить общение как обмен информацией; информация не только передается, но и формируется, уточняется, развивается",
+						"isCorrect": true
+					  },
+					  {
+						"text": "заключается в организации взаимодействия между индивидами, т.е. не только в обмене знаниями, идеями, но и действиями",
+						"isCorrect": false
+					  },
+					  {
+						"text": "означает процесс восприятия и познания друг друга партнерами по общению и установление на этой основе взаимопонимания",
+						"isCorrect": false
+					  },
+					  {
+						"text": "это вид воздействия, при котором мастерство манипулятора используется для скрытого внедрения в психику адресата целей, желаний, намерений, отношений или установок, не совпадающих с теми, которые имеются у адресата в данный момент",
+						"isCorrect": false
+					  },
+					  {
+						"text": "процесс развития социальной сущности человека, который происходит под влиянием среды при усвоении им социального опыта, ценностей, накопленных человечеством",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Интеракция в структуре общения– это:",
+					"variants": [
+					  {
+						"text": "заключается в организации взаимодействия между индивидами, т.е. не только в обмене знаниями, идеями, но и действиями",
+						"isCorrect": true
+					  },
+					  {
+						"text": "позволяет представить общение как обмен информацией; информация не только передается, но и формируется, уточняется, развивается ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "означает процесс восприятия и познания друг друга партнерами по общению и установление на этой основе взаимопонимания",
+						"isCorrect": false
+					  },
+					  {
+						"text": "это вид воздействия, при котором мастерство манипулятора используется для скрытого внедрения в психику адресата целей, желаний, намерений, отношений или установок, не совпадающих с теми, которые имеются у адресата в данный момент",
+						"isCorrect": false
+					  },
+					  {
+						"text": "процесс развития социальной сущности человека, который происходит под влиянием среды при усвоении им социального опыта, ценностей, накопленных человечеством",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Перцепция в структуре общения – это:",
+					"variants": [
+					  {
+						"text": "означает процесс восприятия и познания друг друга партнерами по общению и установление на этой основе взаимопонимания",
+						"isCorrect": true
+					  },
+					  {
+						"text": "процесс развития социальной сущности человека, который происходит под влиянием среды при усвоении им социального опыта, ценностей, накопленных человечеством",
+						"isCorrect": false
+					  },
+					  {
+						"text": "это вид воздействия, при котором мастерство манипулятора используется для скрытого внедрения в психику адресата целей, желаний, намерений, отношений или установок, не совпадающих с теми, которые имеются у адресата в данный момент",
+						"isCorrect": false
+					  },
+					  {
+						"text": "заключается в организации взаимодействия между индивидами, т.е. не только в обмене знаниями, идеями, но и действиями",
+						"isCorrect": false
+					  },
+					  {
+						"text": "позволяет представить общение как обмен информацией; информация не только передается, но и формируется, уточняется, развивается",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Это форма контактов между людьми, которые имеют полномочия от  своих  организаций,  в  ходе  которой  происходит  обмен  мнениями  и целенаправленное  обсуждение  конкретной  проблемы  с  целью поиска взаимовыгодного варианта решения:",
+					"variants": [
+					  {
+						"text": "деловая беседа",
+						"isCorrect": true
+					  },
+					  {
+						"text": "невербальное общение",
+						"isCorrect": false
+					  },
+					  {
+						"text": "электронная коммерция",
+						"isCorrect": false
+					  },
+					  {
+						"text": "коммуникативный конфликт",
+						"isCorrect": false
+					  },
+					  {
+						"text": "дипломатический этикет",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Собеседование  при  приеме  на  работу,  собеседование при увольнении с работы, проблемные и дисциплинарные беседы, переговоры – это виды:",
+					"variants": [
+					  {
+						"text": "деловой беседы",
+						"isCorrect": true
+					  },
+					  {
+						"text": "невербального общения",
+						"isCorrect": false
+					  },
+					  {
+						"text": "электронной коммерции",
+						"isCorrect": false
+					  },
+					  {
+						"text": "электронного бизнеса",
+						"isCorrect": false
+					  },
+					  {
+						"text": "дипломатического этикета",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Вид  деловой  беседы, который  носит  характер  «приемного» интервью, основная цель которого оценить деловые качества поступающего на работу:",
+					"variants": [
+					  {
+						"text": "собеседование при приеме на работу",
+						"isCorrect": true
+					  },
+					  {
+						"text": "собеседование при увольнении с работы",
+						"isCorrect": false
+					  },
+					  {
+						"text": "проблемные беседы",
+						"isCorrect": false
+					  },
+					  {
+						"text": "дисциплинарные беседы",
+						"isCorrect": false
+					  },
+					  {
+						"text": "переговоры",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Вид деловой беседы, который возникают вследствие ситуации незапланированного,  добровольного  ухода  сотрудника  и  ситуации,  когда работника приходится увольнять или сокращать:",
+					"variants": [
+					  {
+						"text": "собеседование при увольнении с работы",
+						"isCorrect": true
+					  },
+					  {
+						"text": "собеседование при приеме на работу",
+						"isCorrect": false
+					  },
+					  {
+						"text": "межкультурная коммуникация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "дипломатический этикет",
+						"isCorrect": false
+					  },
+					  {
+						"text": "переговоры",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Виды  деловой  беседы,  которые вызваны  к  жизни  либо возникновением  сбоев  в  деятельности  сотрудника  и  необходимостью критической оценки его работы, либо фактами нарушения дисциплины:",
+					"variants": [
+					  {
+						"text": "проблемные беседы, дисциплинарные беседы",
+						"isCorrect": true
+					  },
+					  {
+						"text": "дипломатический этикет, переговоры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "собеседование при приеме на работу, сетевой этикет",
+						"isCorrect": false
+					  },
+					  {
+						"text": "электронный бизнес, электронная коммерция",
+						"isCorrect": false
+					  },
+					  {
+						"text": "невербальное общение, вербальное общение",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Переписка,  которая  сопровождает  экономическую,  правовую, финансовую и другие виды деятельности в ходе работы организации, принято называть:",
+					"variants": [
+					  {
+						"text": "деловая корреспонденция",
+						"isCorrect": true
+					  },
+					  {
+						"text": "эссе",
+						"isCorrect": false
+					  },
+					  {
+						"text": "сочинение",
+						"isCorrect": false
+					  },
+					  {
+						"text": "инициативное письмо",
+						"isCorrect": false
+					  },
+					  {
+						"text": "циркулярное письмо",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Письма,  которые  составляются  при  заключении  коммерческих сделок,  решении  вопросов  сбыта  продукции,  снабжения  организации необходимым сырьем и материалами, относят к:",
+					"variants": [
+					  {
+						"text": "коммерческой корреспонденции",
+						"isCorrect": true
+					  },
+					  {
+						"text": "электронной корреспонденции",
+						"isCorrect": false
+					  },
+					  {
+						"text": "циркулярным письмам",
+						"isCorrect": false
+					  },
+					  {
+						"text": "инициативным письмам",
+						"isCorrect": false
+					  },
+					  {
+						"text": "традиционным почтовым сообщениям",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Укажите, что относится к этикетным письмам?",
+					"variants": [
+					  {
+						"text": "все перечисленное",
+						"isCorrect": true
+					  },
+					  {
+						"text": "письмо-поздравление",
+						"isCorrect": false
+					  },
+					  {
+						"text": "письмо-извинение",
+						"isCorrect": false
+					  },
+					  {
+						"text": "благодарственное письмо",
+						"isCorrect": false
+					  },
+					  {
+						"text": "письмо-приглашение",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Один  из  распространенных  особых  знаков-заменителей невербальных средств передачи информации в интернет-коммуникациях:",
+					"variants": [
+					  {
+						"text": "смайлики",
+						"isCorrect": true
+					  },
+					  {
+						"text": "графики",
+						"isCorrect": false
+					  },
+					  {
+						"text": "таблицы",
+						"isCorrect": false
+					  },
+					  {
+						"text": "диаграммы",
+						"isCorrect": false
+					  },
+					  {
+						"text": "SmartArt",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Это  особая  форма  речевой  деятельности  в  условиях непосредственного общения, речь, адресованная определенной аудитории, ораторская речь:",
+					"variants": [
+					  {
+						"text": "публичная речь",
+						"isCorrect": true
+					  },
+					  {
+						"text": "внутренняя речь",
+						"isCorrect": false
+					  },
+					  {
+						"text": "письменная речь",
+						"isCorrect": false
+					  },
+					  {
+						"text": "все ответы верны",
+						"isCorrect": false
+					  },
+					  {
+						"text": "нет правильного ответа",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Пантомимика как невербальное средство общение – это:",
+					"variants": [
+					  {
+						"text": "это походка, позы, осанка, общая моторика всего тела",
+						"isCorrect": true
+					  },
+					  {
+						"text": "это движения мышц лица, главный показатель чувств",
+						"isCorrect": false
+					  },
+					  {
+						"text": "социальный взгляд",
+						"isCorrect": false
+					  },
+					  {
+						"text": "интимный взгляд",
+						"isCorrect": false
+					  },
+					  {
+						"text": "деловой взгляд",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Такесика – это:",
+					"variants": [
+					  {
+						"text": "роль прикосновений в процессе невербального общения. Здесь выделяются рукопожатия, поцелуи, поглаживания, отталкивания и т.п.",
+						"isCorrect": true
+					  },
+					  {
+						"text": "это походка, позы, осанка, общая моторика всего тела",
+						"isCorrect": false
+					  },
+					  {
+						"text": "это движения мышц лица,",
+						"isCorrect": false
+					  },
+					  {
+						"text": "социальный взгляд",
+						"isCorrect": false
+					  },
+					  {
+						"text": "интимный взгляд",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Расположение к  себе  собеседника,  его  притяжение на эмоциональном уровне:",
+					"variants": [
+					  {
+						"text": "аттракция",
+						"isCorrect": true
+					  },
+					  {
+						"text": "социализация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "секуляризация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "риторика ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "эристика",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Как  называется  коммуникационный  эффект, который свидетельствует о том, что первоначальное впечатление о внешнем виде человека является определяющим для дальнейших взаимоотношений:",
+					"variants": [
+					  {
+						"text": "эффект визуального имиджа",
+						"isCorrect": true
+					  },
+					  {
+						"text": "эффект аргументации",
+						"isCorrect": false
+					  },
+					  {
+						"text": "эффект пропорционального выброса информации",
+						"isCorrect": false
+					  },
+					  {
+						"text": "эффект релаксации",
+						"isCorrect": false
+					  },
+					  {
+						"text": "эффект первых фраз",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Укажите пропущенный тип манипуляторов по классификации Э. Шострома: «слабак», «диктатор», «прилипала», «хулиган», «славный парень», «судья», «защитник»...",
+					"variants": [
+					  {
+						"text": "калькулятор",
+						"isCorrect": true
+					  },
+					  {
+						"text": "реципиент",
+						"isCorrect": false
+					  },
+					  {
+						"text": "актуализатор",
+						"isCorrect": false
+					  },
+					  {
+						"text": "абьюзер",
+						"isCorrect": false
+					  },
+					  {
+						"text": "агрессор",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Укажите пропущенный тип манипуляторов по классификации Э. Шострома: «калькулятор», «диктатор», «прилипала», «хулиган», «славный парень», «судья», «защитник»...",
+					"variants": [
+					  {
+						"text": "слабак",
+						"isCorrect": true
+					  },
+					  {
+						"text": "реципиент",
+						"isCorrect": false
+					  },
+					  {
+						"text": "актуализатор",
+						"isCorrect": false
+					  },
+					  {
+						"text": "абьюзер",
+						"isCorrect": false
+					  },
+					  {
+						"text": "агрессор",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Укажите пропущенный тип манипуляторов по классификации Э. Шострома: «калькулятор», «прилипала», «хулиган», «славный парень», «судья», «защитник», «слабак»...",
+					"variants": [
+					  {
+						"text": "диктатор",
+						"isCorrect": true
+					  },
+					  {
+						"text": "реципиент",
+						"isCorrect": false
+					  },
+					  {
+						"text": "актуализатор",
+						"isCorrect": false
+					  },
+					  {
+						"text": "абьюзер",
+						"isCorrect": false
+					  },
+					  {
+						"text": "агрессор",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Укажите пропущенный тип манипуляторов по классификации Э. Шострома: «калькулятор», «славный парень», «хулиган», «диктатор», «судья», «защитник», «слабак»...",
+					"variants": [
+					  {
+						"text": "прилипала",
+						"isCorrect": true
+					  },
+					  {
+						"text": "реципиент ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "актуализатор",
+						"isCorrect": false
+					  },
+					  {
+						"text": "абьюзер",
+						"isCorrect": false
+					  },
+					  {
+						"text": "агрессор",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Укажите пропущенный тип манипуляторов по классификации Э. Шострома: «калькулятор», «прилипала», «хулиган», «диктатор», «судья», «защитник», «слабак»...",
+					"variants": [
+					  {
+						"text": "славный парень",
+						"isCorrect": true
+					  },
+					  {
+						"text": "реципиент",
+						"isCorrect": false
+					  },
+					  {
+						"text": "актуализатор",
+						"isCorrect": false
+					  },
+					  {
+						"text": "абьюзер",
+						"isCorrect": false
+					  },
+					  {
+						"text": "агрессор",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "По мнению Э. Шострома 8 манипулятивных типов используют 4 манипуляционные системы:",
+					"variants": [
+					  {
+						"text": "активный манипулятор, пассивный манипулятор, соревнующийся манипулятор, безразличный манипулятор",
+						"isCorrect": true
+					  },
+					  {
+						"text": "активный манипулятор, пассивный манипулятор, соревнующийся манипулятор, эмпатичный манипулятор",
+						"isCorrect": false
+					  },
+					  {
+						"text": "активный манипулятор, пассивный манипулятор, безразличный манипулятор, эмпатичный манипулятор",
+						"isCorrect": false
+					  },
+					  {
+						"text": "активный манипулятор, пассивный манипулятор, безразличный манипулятор, системный манипулятор",
+						"isCorrect": false
+					  },
+					  {
+						"text": "нет правильного ответа",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Способность слушать, передать информацию и принять ее с нужным смыслом, понять другого, сопереживать, сочувствовать, адекватно оценить себя и других, принять мнение другого, решать конфликт, взаимодействовать с коллективом:",
+					"variants": [
+					  {
+						"text": "коммуникативные умения",
+						"isCorrect": true
+					  },
+					  {
+						"text": "коммуникативные поиски",
+						"isCorrect": false
+					  },
+					  {
+						"text": "коммуникативные знания",
+						"isCorrect": false
+					  },
+					  {
+						"text": "все ответы верны",
+						"isCorrect": false
+					  },
+					  {
+						"text": "нет правильного ответа",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Какая функция деловых коммуникаций помогает партнерам при встрече установить профессиональные близкие отношения для совместного коммуникативного процесса?",
+					"variants": [
+					  {
+						"text": "интегративная",
+						"isCorrect": true
+					  },
+					  {
+						"text": "инструментальная",
+						"isCorrect": false
+					  },
+					  {
+						"text": "самопрезентативная",
+						"isCorrect": false
+					  },
+					  {
+						"text": "критическая",
+						"isCorrect": false
+					  },
+					  {
+						"text": "все ответы верны",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Какую  функцию  выполняют  деловые  коммуникации,  где сотрудники, партнеры  стремятся  выразить  и  понять  эмоциональные переживания друг друга, чаще выражающиеся через невербальные средства?",
+					"variants": [
+					  {
+						"text": "экспрессивная",
+						"isCorrect": true
+					  },
+					  {
+						"text": "перцептивная",
+						"isCorrect": false
+					  },
+					  {
+						"text": "регулятивная",
+						"isCorrect": false
+					  },
+					  {
+						"text": "прогностическая",
+						"isCorrect": false
+					  },
+					  {
+						"text": "критическая",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Что характерно для стиля коммуникации, ориентированного на разрешение проблем?",
+					"variants": [
+					  {
+						"text": "активное поисковое поведение, совместная работа для достижения благоприятного для всех результата",
+						"isCorrect": true
+					  },
+					  {
+						"text": "откровенность и прямота, высказывание мнений каждого из членов коллектива, при этом не прислушиваясь к друг другу",
+						"isCorrect": false
+					  },
+					  {
+						"text": "уклонение от конфликтов, стараться изначально не способствовать появлению разных мнений, конфликта",
+						"isCorrect": false
+					  },
+					  {
+						"text": "осознание  невозможности  немедленного  преодоления  слабости партнера, его недостатков",
+						"isCorrect": false
+					  },
+					  {
+						"text": "использование приемов (техник) манипулирования",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Способность слушать, передать информацию и принять ее с нужным смыслом, понять другого, сопереживать, сочувствовать, адекватно оценить себя и других, принять мнение другого, решать конфликт, взаимодействовать с коллективом:",
+					"variants": [
+					  {
+						"text": "коммуникативные умения",
+						"isCorrect": true
+					  },
+					  {
+						"text": "коммуникативные поиски",
+						"isCorrect": false
+					  },
+					  {
+						"text": "коммуникативные знания",
+						"isCorrect": false
+					  },
+					  {
+						"text": "все ответы верны",
+						"isCorrect": false
+					  },
+					  {
+						"text": "нет правильного ответа",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Предметом какой науки является изучение закономерностей и проблем, связанных с деловым общением людей и социальных групп в организационных системах (на предприятии, на производстве, между предприятиями и т.п.)?",
+					"variants": [
+					  {
+						"text": "деловые коммуникации",
+						"isCorrect": true
+					  },
+					  {
+						"text": "философии",
+						"isCorrect": false
+					  },
+					  {
+						"text": "герменевтики",
+						"isCorrect": false
+					  },
+					  {
+						"text": "истории философии",
+						"isCorrect": false
+					  },
+					  {
+						"text": "эпистемологии",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Информационный обмен в обществе – это:",
+					"variants": [
+					  {
+						"text": "социальная коммуникация",
+						"isCorrect": true
+					  },
+					  {
+						"text": "деловая коммуникация ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "коммуникация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "общение",
+						"isCorrect": false
+					  },
+					  {
+						"text": "нет правильного ответа",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Представители какого вида культур, по Э. Холлу, стремятся четко расписывать свой график и заниматься делами последовательно, приступать к выполнению новой задачи только после выполнения предыдущей. В этих культурах межличностные отношения менее важны, чем выполнение задачи — по крайней мере, в деловой сфере?",
+					"variants": [
+					  {
+						"text": "монохронных культур",
+						"isCorrect": true
+					  },
+					  {
+						"text": "полихронных культур",
+						"isCorrect": false
+					  },
+					  {
+						"text": "моноактивные культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "полиактивные культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "реактивные культуры",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Представители  какого  вида  культур,  по  Э.  Холлу,  чаще занимаются  множеством  дел  одновременно,  четких  графиков  они  не составляют или, по крайней мере, не слишком охотно их придерживаются, межличностные отношения могут ставиться выше интересов дела?",
+					"variants": [
+					  {
+						"text": "полихронные культуры",
+						"isCorrect": true
+					  },
+					  {
+						"text": "монохронные культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "моноактивные культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "полиактивные культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "реактивные культуры",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Какой тип культуры, по Э. Холлу, характеризуются плотностью социальных  связей  (статус  и  репутация  распространяются  на  все  сферы жизни), личная жизнь не отделена от профессиональной?",
+					"variants": [
+					  {
+						"text": "высококонтекстный тип культуры",
+						"isCorrect": true
+					  },
+					  {
+						"text": "низкоконтекстный тип культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "реактивный тип культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "полиактивный тип культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "моноактивный тип культуры",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Какой тип культуры, по Э. Холлу, не просто разделяют частную и общественную  жизнь,  но  и  рассматривают  каждый  сектор  своей  жизни отдельно. Причем статус и репутация не распространяются автоматически на все сферы жизни?",
+					"variants": [
+					  {
+						"text": "низкоконтекстный тип культуры",
+						"isCorrect": true
+					  },
+					  {
+						"text": "высококонтекстный тип культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "реактивный тип культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "полиактивный тип культуры",
+						"isCorrect": false
+					  },
+					  {
+						"text": "моноактивный тип культуры",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Как называется наука об имидже? ",
+					"variants": [
+					  {
+						"text": "имиджелогия",
+						"isCorrect": true
+					  },
+					  {
+						"text": "деловая коммуникация",
+						"isCorrect": false
+					  },
+					  {
+						"text": "философия",
+						"isCorrect": false
+					  },
+					  {
+						"text": "гносеология",
+						"isCorrect": false
+					  },
+					  {
+						"text": "аксиология",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Целенаправленно сформированное представление о личности, создающее у людей определенное впечатление, в котором эта личность нуждается, называется:",
+					"variants": [
+					  {
+						"text": "имидж",
+						"isCorrect": true
+					  },
+					  {
+						"text": "мировоззрение",
+						"isCorrect": false
+					  },
+					  {
+						"text": "оценка",
+						"isCorrect": false
+					  },
+					  {
+						"text": "характеристика",
+						"isCorrect": false
+					  },
+					  {
+						"text": "визитная карточка",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "В современной науке выделяют 2 типа имиджей:",
+					"variants": [
+					  {
+						"text": "корпоративный и персональный",
+						"isCorrect": true
+					  },
+					  {
+						"text": "общечеловеческий и человеческий",
+						"isCorrect": false
+					  },
+					  {
+						"text": "философский и этический",
+						"isCorrect": false
+					  },
+					  {
+						"text": "познавательный и вненаучный",
+						"isCorrect": false
+					  },
+					  {
+						"text": "честный и ложный",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Значение имиджа для делового человека?",
+					"variants": [
+					  {
+						"text": "все ответы верны",
+						"isCorrect": true
+					  },
+					  {
+						"text": "чем удачнее деловой имидж, тем выше профессиональный и деловой авторитет",
+						"isCorrect": false
+					  },
+					  {
+						"text": "удачный деловой имидж влияет не только на восприятие окружающими, но и на восприятие самого себя",
+						"isCorrect": false
+					  },
+					  {
+						"text": "деловой имидж является важной составной частью культуры делового общения",
+						"isCorrect": false
+					  },
+					  {
+						"text": "обладание имиджем является личностной и профессиональной характеристикой",
+						"isCorrect": false
+					  }
+					]
+				  },
+				  {
+					"question": "Какие  разновидности  документов  и  документационного обеспечения выделяют по направлению отправки?",
+					"variants": [
+					  {
+						"text": "входящие, исходящие",
+						"isCorrect": true
+					  },
+					  {
+						"text": "первичные, вторичные",
+						"isCorrect": false
+					  },
+					  {
+						"text": "рукописные, машинописные",
+						"isCorrect": false
+					  },
+					  {
+						"text": "читаемые человеком, читаемые ЭВМ",
+						"isCorrect": false
+					  },
+					  {
+						"text": "для специального использования, внутренние",
+						"isCorrect": false
+					  }
+					]
+					}
+            ]);
+
+			const shuffleArray = (array) => {
+              return array.sort(() => Math.random() - 0.5);
+            };
+
+			const shuffleVariantsInQuestions = (questions) => {
+              return questions.map(question => ({
+                ...question,
+                variants: shuffleArray([...question.variants])
+              }));
+            };
+
+            // Выбор случайных 30 вопросов
+             // Выбор случайных 30 вопросов
+             const getRandomQuestions = () => {
+              // Перетасовываем массив вопросов случайным образом
+              const shuffledQuestions = [...allQuestions.value].sort(() => Math.random() - 0.5);
+              // Возвращаем первые 30 вопросов
+              return shuffleVariantsInQuestions(shuffledQuestions.slice(0, 30));
+            };
+
+            // Список выбранных вопросов
+            const questions = ref(getRandomQuestions());
+
+            const currentQuestionIndex = ref(0);
+            const correctAnswers = ref(0);
+            const incorrectAnswers = ref(0);
+            const results = ref([]);
+
+            const checkAnswer = (variant, index) => {
+              // Запоминаем результаты ответа
+              const selectedVariants = questions.value[currentQuestionIndex.value].variants.map((v, idx) => ({
+                ...v,
+                selected: idx === index
+              }));
+
+              // Находим правильный ответ
+              const correctVariant = questions.value[currentQuestionIndex.value].variants.find(v => v.isCorrect);
+
+              // Добавляем результат
+              results.value.push({
+                question: questions.value[currentQuestionIndex.value].question,
+                variants: selectedVariants,
+                isCorrect: variant.isCorrect,
+                correctAnswer: correctVariant.text
+              });
+
+              if (variant.isCorrect) {
+                correctAnswers.value++;
+              } else {
+                incorrectAnswers.value++;
+              }
+
+              currentQuestionIndex.value++;
+            };
+
+            return {
+              questions,
+              currentQuestionIndex,
+              correctAnswers,
+              incorrectAnswers,
+              results,
+              checkAnswer
+            };
+          }
+        }).mount('#app');
+    </script>
+</body>
+</html>
