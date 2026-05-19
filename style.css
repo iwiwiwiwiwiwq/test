@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Play:wght@400;700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+body {
+    background-color: rgb(49, 49, 49);
+}
+
+#app {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    overflow: auto;
+}
+
+.correct {
+    background-color: #d4edda;
+    color: green;
+}
+.incorrect {
+    background-color: #f8d7da;
+    border: 2px dashed rgba(0, 0, 0, 0.39);
+    color: red;
+}
+
+.container {
+    width: 80%;
+}
+
+.btn-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.result-text {
+    font-family: "Play", serif;
+    font-weight: 400;
+    font-size: 30px;
+    letter-spacing: 2px;
+    font-style: normal;
+    text-align: center;
+    color: white;
+    text-decoration: underline;
+}
+
+.question {
+    font-family: "Play", serif;
+    font-weight: 400;
+    font-style: normal;
+    text-align: center;
+    color: white;
+}
+
+.answer-btn {
+    height: 50px;
+    margin-bottom: 10px;
+    width: 100%;
+    font-family: "Play", serif;
+    font-weight: 400;
+    font-size: 20px;
+    background-color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.56);
+}
+
+.result-container {
+    height: 500px;
+    overflow-y: auto;
+}
+
+.result-counter {
+    font-family: "Play", serif;
+    font-weight: 400;
+    color: white;
+    font-size: 20px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid white;
+}
+
+.question-container {
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    font-family: "Play", serif;
+    font-weight: 400;
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+.question-top {
+    font-size: 25px;
+}
+
+.answer-top {
+    padding-left: 20px;
+}
+
+@media (max-width: 768px) {
+    .question {
+        font-size: 25px;
+    }
+
+    .container {
+        width: 90%;
+    }
+}
+
+@media (max-width: 500px) {
+    .question {
+        font-size: 20px;
+    }
+
+    .answer-btn {
+        height: fit-content;
+        padding: 10px;
+        font-size: 14px;
+    }
+
+    .container {
+        width: 98%;
+    }
+
+    .result-container {
+        height: 700px;
+    }
+}
